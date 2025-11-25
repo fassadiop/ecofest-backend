@@ -1,0 +1,13 @@
+Bonjour {{ inscription.prenom }} {{ inscription.nom }},
+
+Nous avons bien reçu votre inscription pour {% if event %}{{ event.nom }}{% else %}ECOFEST{% endif %}.
+Référence: #{{ inscription.id }}
+Statut: {{ inscription.statut }}
+Profil: {{ inscription.type_profil }}
+Email: {{ inscription.email }}
+
+Nous vous enverrons une invitation / badge PDF une fois votre inscription validée.
+
+Cordialement,
+L'équipe ECOFEST
+{{ site_url }}

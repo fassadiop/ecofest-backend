@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+      body {font-family: Arial, sans-serif; color:#111; background:#f6f7fb; margin:0;}
+      .wrapper {max-width:680px; margin:20px auto; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,0.08);}
+      .header {background: linear-gradient(90deg,#6b21a8,#0ea5e9); padding:18px; color:white; display:flex; align-items:center; gap:14px;}
+      .logo {width:56px; height:56px; border-radius:8px; object-fit:cover; background:#fff;}
+      .title {font-size:18px; font-weight:700;}
+      .body {padding:20px; color:#111; line-height:1.5;}
+      .cta {display:inline-block; margin-top:14px; padding:10px 14px; background:#0ea5e9; color:#fff; border-radius:8px; text-decoration:none;}
+      .meta {margin-top:16px; padding:12px; background:#f3f4f6; border-radius:8px; font-size:13px; color:#333;}
+      .footer {padding:14px; text-align:center; font-size:12px; color:#777;}
+    </style>
+  </head>
+  <body>
+    <div class="wrapper" role="article">
+      <div class="header">
+        <!-- chemin dev local (fichier uploadé) -->
+        <img class="logo" src="sandbox:/mnt/data/Capture1.PNG" alt="ECOFEST logo" />
+        <div>
+          <div class="title">Confirmation d'inscription — ECOFEST</div>
+          <div style="font-size:13px;opacity:0.9">Merci pour votre inscription</div>
+        </div>
+      </div>
+
+      <div class="body">
+        <p>Bonjour {{ inscription.prenom }} {{ inscription.nom }},</p>
+
+        <p>Nous avons bien reçu votre inscription pour
+          <strong>
+            {% if event %}
+              {{ event.nom }}
+            {% else %}
+              ECOFEST
+            {% endif %}
+          </strong>.
+        </p>
+
+        <div class="meta">
+          <strong>Référence :</strong> #{{ inscription.id }}<br/>
+          <strong>Statut :</strong> {{ inscription.statut }}<br/>
+          <strong>Profil :</strong> {{ inscription.type_profil }}<br/>
+          <strong>Email :</strong> {{ inscription.email }}
+        </div>
+
+        <p style="margin-top:12px">
+          Nous vous enverrons une invitation / badge en PDF une fois votre inscription validée.
+        </p>
+
+        <p style="margin-top:14px">Cordialement,<br/><strong>L'équipe ECOFEST</strong></p>
+
+        <a class="cta" href="{{ site_url }}">{{ site_url }}</a>
+      </div>
+
+      <div class="footer">© ECOFEST 2025 — arts & culture</div>
+    </div>
+  </body>
+</html>

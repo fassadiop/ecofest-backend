@@ -56,11 +56,9 @@ def upload_to_passport(instance, filename):
 # ---------- Inscription ----------
 class Inscription(models.Model):
     PROFILE_CHOICES = [
-        ('All Access','All Access'),
-        ('Équipe technique','Équipe technique'),
+        ('Festivaliers','Festivaliers'),
         ('Presse','Presse'),
-        ('Staff','Staff'),
-        ('VIP','VIP'),
+        ('Artistes professionnels','Artistes professionnels'),
     ]
     STATUS_CHOICES = [
         ('En_attente','En_attente'),

@@ -1,6 +1,7 @@
 from pathlib import Path
 import venv
 import os
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -116,12 +117,14 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:5174",
-    "http://127.0.0.1:5174",
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
+    # "http://localhost:5173",
+    # "http://127.0.0.1:5173",
+    # "http://localhost:5174",
+    # "http://127.0.0.1:5174",
+    # "http://localhost:8000",
+    # "http://127.0.0.1:8000",
+    "http://ecofest.app",
+    "http://www.ecofest.app",
 ]
 
 # SendGrid
@@ -150,3 +153,15 @@ CELERYD_FORCE_EXECV = True
 CELERYD_POOL = "solo"
 
 ALLOWED_HOSTS = ["*"]
+
+
+DATABASES = {
+    'default': {
+    'ENGINE': 'django.db.backends.postgresql',
+    'NAME': os.getenv('DB_NAME'),
+    'USER': os.getenv('DB_USER'),
+    'PASSWORD': os.getenv('DB_PASSWORD'),
+    'HOST': os.getenv('DB_HOST', 'localhost'),
+    'PORT': os.getenv('DB_PORT', '5432'),
+    }
+}

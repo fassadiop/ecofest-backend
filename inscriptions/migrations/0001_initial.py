@@ -69,7 +69,7 @@ class Migration(migrations.Migration):
                 ('telephone', models.CharField(blank=True, max_length=30, null=True)),
                 ('nationalite', models.CharField(blank=True, max_length=100, null=True)),
                 ('provenance', models.CharField(blank=True, max_length=255, null=True)),
-                ('type_profil', models.CharField(choices=[('All Access', 'All Access'), ('Équipe technique', 'Équipe technique'), ('Presse', 'Presse'), ('Staff', 'Staff'), ('VIP', 'VIP')], max_length=30)),
+                ('type_profil', models.CharField(choices=[('Festivaliers', 'Festivaliers'), ('Presse', 'Presse'), ('Artistes professionnels', 'Artistes professionnels')], max_length=30)),
                 ('passeport_file', models.FileField(blank=True, null=True, upload_to=inscriptions.models.upload_to_passport)),
                 ('adresse', models.TextField(blank=True, null=True)),
                 ('date_naissance', models.DateField(blank=True, null=True)),

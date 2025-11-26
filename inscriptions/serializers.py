@@ -8,6 +8,17 @@ from django.conf import settings
 
 User = get_user_model()
 
+class ParticipantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Participant
+        fields = [
+            'id',
+            'user',
+            'organisation',
+            'created_at'
+        ]
+
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

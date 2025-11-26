@@ -1,13 +1,52 @@
 # inscriptions/tasks.py
 from celery import shared_task
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMultiAlternatives, EmailMessage
 from django.template.loader import render_to_string
 from django.conf import settings
-from .models import Inscription
+from .models import Inscription, Participant
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
 import base64
 import os
+from .utils_badges import generate_badge
+from .utils_letters import generate_invitation_letter_pdf
+
+
+@shared_task
+def send_invitation_package(participant_id):
+    participant = Participant.objects.get(id=participant_id)
+
+    # 1) Générer badge PNG
+    badge_path = generate_badge(participant)
+
+    # 2) Générer lettre PDF
+    letter_path = generate_invitation_letter_pdf(participant)
+
+    # 3) Préparer email
+    subject = "ECOFEST 2025 — Votre accréditation est confirmée !"
+    body = f"""
+Cher/Chère {participant.prenom},
+
+Votre accréditation ECOFEST est confirmée !
+Veuillez trouver en pièce jointe votre badge et votre lettre d'invitation officielle.
+
+Cordialement,
+L'équipe ECOFEST 2025.
+"""
+
+    email = EmailMessage(
+        subject,
+        body,
+        settings.DEFAULT_FROM_EMAIL,
+        [participant.email],
+    )
+
+    email.attach_file(badge_path)
+    email.attach_file(letter_path)
+
+    # 4) Envoyer
+    email.send(fail_silently=False)
+
 
 @shared_task
 def send_confirmation_email(inscription_id):

@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'rest_framework',
     'inscriptions',
+    "inscriptions.apps.InscriptionsConfig",
 ]
 
 MIDDLEWARE = [
@@ -82,13 +83,14 @@ USE_I18N = True
 USE_TZ = True
 
 
-STATIC_URL = 'static/'
-
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static")
+]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -99,11 +101,18 @@ REST_FRAMEWORK = {
     ),
 }
 
-SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "ECOFEST <no-reply@ecofest.example>")
 
-DEFAULT_FROM_EMAIL = 'noreply@ecofest.local'
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+EMAIL_HOST = os.getenv("EMAIL_HOST")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT"))
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS") == "True"
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
+
+
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
@@ -119,10 +128,6 @@ CORS_ALLOWED_ORIGINS = [
     "http://www.ecofest.app",
 ]
 
-# SendGrid
-SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "ECOFEST <no-reply@ecofest.example>")
-
 # URL du site (utilisée dans les templates)
 SITE_URL = os.environ.get("SITE_URL", "http://127.0.0.1:3000")
 
@@ -130,10 +135,6 @@ SITE_URL = os.environ.get("SITE_URL", "http://127.0.0.1:3000")
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
-# (Optionnel) en dev tu peux imprimer mails dans la console
-# EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 CELERY_BROKER_URL = "redis://localhost:6379/0"
 CELERY_RESULT_BACKEND = "redis://localhost:6379/0"

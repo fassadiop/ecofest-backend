@@ -1,0 +1,34 @@
+services:
+  # --- SERVICE WEB DJANGO ---
+  - type: web
+    name: django-backend
+    env: python
+    plan: professional
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn backend.wsgi:application"
+    envVars:
+      - key: SECRET_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: CELERY_BROKER_URL
+        sync: false
+
+  # --- BACKGROUND WORKER CELERY ---
+  - type: worker
+    name: django-celery-worker
+    env: python
+    plan: professional
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "celery -A backend worker -l info"
+    envVars:
+      - key: SECRET_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: CELERY_BROKER_URL
+        sync: false

@@ -23,6 +23,19 @@ from .utils_badges import generate_badge
 
 User = get_user_model()
 
+class InscriptionPublicViewSet(viewsets.ModelViewSet):
+    queryset = Inscription.objects.all().order_by('-created_at')
+    serializer_class = PublicInscriptionSerializer
+
+    def get_permissions(self):
+        if self.action in ['create']:
+            return [AllowAny()]
+        if self.action in ['update','partial_update','destroy','change_status','admin_list']:
+            return [IsAdminUser()]
+        # lecture ouverte (ou restreindre selon besoin)
+        return [permissions.AllowAny()]
+
+
 class InscriptionViewSet(viewsets.ModelViewSet):
     queryset = Inscription.objects.all().order_by('-created_at')
     serializer_class = InscriptionSerializer

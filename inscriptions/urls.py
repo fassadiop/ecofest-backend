@@ -1,8 +1,10 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from .views import InscriptionPublicViewSet
 from . import views
 
 router = DefaultRouter()
+router.register(r'inscriptions', InscriptionPublicViewSet, basename='inscriptions')
 
 urlpatterns = [
     path('', include(router.urls)),

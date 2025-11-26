@@ -57,7 +57,7 @@ def validate_inscription(request, pk):
     participant = inscription.participant
 
     try:
-        badge_path = generate_badge(participant)
+        badge_path = generate_badge(inscription)
     except Exception as e:
         return Response(
             {"error": f"Erreur lors de la génération du badge : {str(e)}"},
@@ -65,7 +65,7 @@ def validate_inscription(request, pk):
         )
 
     try:
-        send_invitation_package.delay(inscription.id)
+        send_invitation_package(inscription.id)
     except Exception as e:
         return Response(
             {"error": f"Erreur lors de l’envoi de l’email : {str(e)}"},
@@ -95,7 +95,7 @@ def get_badge_url(request, pk):
     participant = inscription.participant  # 🔥 correction
 
     try:
-        badge_path = generate_badge(participant)
+        badge_path = generate_badge(inscription)
     except Exception as e:
         return Response(
             {"error": f"Erreur badge : {str(e)}"},

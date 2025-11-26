@@ -16,4 +16,4 @@ def trigger_invitation_generation(sender, instance, created, **kwargs):
 
     # On ne réagit que lorsque le statut devient Validé
     if instance.statut == "Validé":
-        send_invitation_package.delay(instance.id)
+        send_invitation_package(instance.id)

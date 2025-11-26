@@ -164,7 +164,7 @@ class PublicInscriptionSerializer(serializers.ModelSerializer):
 
         # 6) Tâche Celery
         try:
-            send_confirmation_email.delay(inscription.id)
+            send_confirmation_email(inscription.id)
         except Exception as e:
             print("Celery error:", e)
 

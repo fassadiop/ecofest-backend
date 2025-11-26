@@ -30,10 +30,6 @@ class InscriptionPublicViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['create']:
             return [AllowAny()]
-        if self.action in ['update','partial_update','destroy','change_status','admin_list']:
-            return [IsAdminUser()]
-        # lecture ouverte (ou restreindre selon besoin)
-        return [permissions.AllowAny()]
 
 
 class InscriptionViewSet(viewsets.ModelViewSet):

@@ -2,12 +2,16 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
 from inscriptions.tasks import send_confirmation_email
-from .models import Participant, Inscription, PieceJointe, Badge, Evenement
+from .models import Participant, Inscription, Badge, Evenement
 from django.core.mail import send_mail
 from django.conf import settings
 
 User = get_user_model()
 
+
+# ------------------------
+# USER / PARTICIPANT
+# ------------------------
 class ParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Participant
@@ -22,29 +26,46 @@ class ParticipantSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id','username','email','first_name','last_name','telephone','role','langue_pref']
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name',
+            'telephone', 'role', 'langue_pref'
+        ]
+
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
-        fields = ['id','username','email','first_name','last_name','password','telephone','langue_pref']
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name',
+            'password', 'telephone', 'langue_pref'
+        ]
 
     def create(self, validated_data):
         password = validated_data.pop('password')
         user = User(**validated_data)
         user.set_password(password)
         user.save()
-        # create participant profile
+
+        # créer participant lié
         Participant.objects.create(user=user)
+
         return user
 
+
+# ------------------------
+# EVENEMENT
+# ------------------------
 class EvenementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Evenement
         fields = '__all__'
 
+
+# ------------------------
+# INSCRIPTION (ADMIN)
+# ------------------------
 class InscriptionSerializer(serializers.ModelSerializer):
     passeport_file = serializers.FileField(required=False, allow_null=True)
     badge_file = serializers.FileField(read_only=True)
@@ -53,82 +74,98 @@ class InscriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Inscription
         fields = [
-            'id','participant_id','evenement','nom','prenom','email','telephone','nationalite',
-            'provenance','type_profil','passeport_file','adresse','date_naissance','statut',
-            'admin_remarque','badge_file','invitation_file','created_at'
+            'id', 'participant', 'evenement', 'nom', 'prenom', 'email',
+            'telephone', 'nationalite', 'provenance', 'type_profil',
+            'passeport_file', 'adresse', 'date_naissance', 'statut',
+            'admin_remarque', 'badge_file', 'invitation_file',
+            'created_at'
         ]
-        read_only_fields = ('statut','admin_remarque','badge_file','invitation_file','created_at')
+        read_only_fields = (
+            'statut', 'admin_remarque', 'badge_file',
+            'invitation_file', 'created_at'
+        )
 
     def create(self, validated_data):
-        # validated_data contains 'participant' because of source above
         return super().create(validated_data)
 
+
 class AdminStatusSerializer(serializers.Serializer):
-    statut = serializers.ChoiceField(choices=[('Validé','Validé'),('Refusé','Refusé')])
+    statut = serializers.ChoiceField(choices=[('Validé', 'Validé'), ('Refusé', 'Refusé')])
     admin_remarque = serializers.CharField(allow_blank=True, required=False)
+
 
 class BadgeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Badge
-        fields = ['png_path','token','date_issuance','access_level']
+        fields = ['png_path', 'token', 'date_issuance', 'access_level']
 
+
+# ------------------------
+# INSCRIPTION PUBLIQUE
+# ------------------------
 class PublicInscriptionSerializer(serializers.ModelSerializer):
-    # fichiers uploadés
     passeport_file = serializers.FileField(required=False, allow_null=True)
 
     class Meta:
         model = Inscription
         fields = [
-            'id','evenement','nom','prenom','email','telephone','nationalite',
-            'provenance','type_profil','passeport_file','adresse','date_naissance',
-            'statut','admin_remarque','created_at'
+            'id', 'evenement', 'nom', 'prenom', 'email', 'telephone',
+            'nationalite', 'provenance', 'type_profil', 'passeport_file',
+            'adresse', 'date_naissance', 'statut', 'admin_remarque',
+            'created_at'
         ]
-        read_only_fields = ('statut','admin_remarque','created_at')
-
-    def validate_email(self, value):
-        # Optional: stricter email/check duplicates etc.
-        return value
+        read_only_fields = ('statut', 'admin_remarque', 'created_at')
 
     def create(self, validated_data):
-        # Créer un participant "anonyme" lié à cette inscription (participant.user = None)
-        # On ne tente pas d'associer à un User si l'inscription est publique.
+        # 1) Création participant simple
         participant = Participant.objects.create(user=None, organisation=None)
 
-        # Forcer statut En_attente pour la soumission publique
+        # 2) Forcer statut
         validated_data['statut'] = 'En_attente'
 
-        # create the inscription
-        inscription = Inscription.objects.create(participant=participant, **validated_data)
+        # 3) Créer inscription
+        inscription = Inscription.objects.create(
+            participant=participant,
+            **validated_data
+        )
 
-        # Envoi d'un email de confirmation (console backend en dev)
+        # 4) Email confirmation utilisateur
         try:
             subject = "Réception de votre inscription – ECOFEST"
             message = (
                 f"Bonjour {inscription.prenom},\n\n"
-                "Nous avons bien reçu votre inscription. Elle est en attente de validation.\n"
-                "Vous serez informé par email une fois la validation effectuée.\n\n"
+                "Votre inscription est reçue et en attente de validation.\n"
+                "Vous recevrez un email dès validation.\n\n"
                 "Cordialement,\nL'équipe ECOFEST"
             )
-            send_mail(subject, message, getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@example.com'),
-                      [inscription.email], fail_silently=True)
-        except Exception:
-            # fail_silently pour dev; log en prod
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [inscription.email],
+                fail_silently=True,
+            )
+        except:
             pass
 
-        # Notifier admin(s) sommairement
+        # 5) Email admin
         try:
-            admin_subject = f"[ECOFEST] Nouvelle inscription En_attente: {inscription.nom} {inscription.prenom}"
-            admin_message = f"Consulter l'admin pour valider: /admin/inscriptions/inscription/{inscription.id}/change/"
-            send_mail(admin_subject, admin_message, getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@example.com'),
-                      [getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@example.com')], fail_silently=True)
-        except Exception:
+            admin_subject = f"[ECOFEST] Nouvelle inscription : {inscription.nom} {inscription.prenom}"
+            admin_message = f"Voir l'admin : /admin/inscriptions/inscription/{inscription.id}/change/"
+            send_mail(
+                admin_subject,
+                admin_message,
+                settings.DEFAULT_FROM_EMAIL,
+                [settings.DEFAULT_FROM_EMAIL],
+                fail_silently=True,
+            )
+        except:
             pass
 
+        # 6) Tâche Celery
         try:
             send_confirmation_email.delay(inscription.id)
         except Exception as e:
-            # log erreur, mais ne bloque pas la création
-            print("Celery send task error:", e)
+            print("Celery error:", e)
 
         return inscription
-    

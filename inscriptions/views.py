@@ -1,15 +1,18 @@
+import os
 from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from .models import Inscription, Participant, Badge, Evenement, Inscription, Badge
-from .serializers import InscriptionSerializer, RegisterSerializer, UserSerializer, AdminStatusSerializer, BadgeSerializer, EvenementSerializer, PublicInscriptionSerializer
+from .serializers import ParticipantSerializer, InscriptionSerializer, RegisterSerializer, UserSerializer, AdminStatusSerializer, BadgeSerializer, EvenementSerializer, PublicInscriptionSerializer
 from django.contrib.auth import get_user_model
 from rest_framework import generics, status, permissions
-from rest_framework.permissions import IsAdminUser, AllowAny
+from rest_framework.permissions import IsAdminUser, AllowAny, IsAuthenticated
 from rest_framework.generics import ListAPIView
 from rest_framework.views import APIView
-from .tasks import send_confirmation_email
+from .tasks import send_confirmation_email, send_invitation_package
+from django.conf import settings
+
 
 User = get_user_model()
 
@@ -128,3 +131,69 @@ class ResendConfirmationAPIView(APIView):
     def post(self, request, pk):
         send_confirmation_email.delay(pk)
         return Response({"ok": True, "message": "E-mail programmé"}, status=status.HTTP_200_OK)
+    
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def validate_inscription(request, pk):
+    """
+    Passe une inscription en VALIDEE + déclenche envoi badge + lettre.
+    """
+    participant = get_object_or_404(Participant, pk=pk)
+    participant.statut = "VALIDEE"
+    participant.save(update_fields=["statut"])
+
+    # envoi automatique (badge + PDF)
+    send_invitation_package.delay(participant.id)
+
+    serializer = ParticipantSerializer(participant)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def refuse_inscription(request, pk):
+    """
+    Passe une inscription en REFUSEE (sans envoi d’email).
+    """
+    participant = get_object_or_404(Participant, pk=pk)
+    participant.statut = "REFUSEE"
+    participant.save(update_fields=["statut"])
+
+    serializer = ParticipantSerializer(participant)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_badge_url(request, pk):
+    """
+    Génère le badge si besoin puis renvoie l’URL pour téléchargement/affichage.
+    """
+    participant = get_object_or_404(Participant, pk=pk)
+    badge_path = generate_badge(participant)  # crée /media/badges/badge_<id>.png
+
+    rel_path = os.path.relpath(badge_path, settings.MEDIA_ROOT)
+    badge_url = request.build_absolute_uri(settings.MEDIA_URL + rel_path)
+
+    return Response({"badge_url": badge_url})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_pieces_urls(request, pk):
+    """
+    Renvoie les URLs des pièces jointes : passeport, CNI, carte presse.
+    Adapte les noms de champs à ton modèle.
+    """
+    participant = get_object_or_404(Participant, pk=pk)
+
+    data = {}
+    # ⚠️ adapte ces noms de champs à ton models.py
+    if getattr(participant, "passeport", None):
+        data["passeport_url"] = request.build_absolute_uri(participant.passeport.url)
+    if getattr(participant, "cni", None):
+        data["cni_url"] = request.build_absolute_uri(participant.cni.url)
+    if getattr(participant, "carte_presse", None):
+        data["carte_presse_url"] = request.build_absolute_uri(participant.carte_presse.url)
+
+    return Response(data)

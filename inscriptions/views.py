@@ -12,6 +12,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework.views import APIView
 from .tasks import send_confirmation_email, send_invitation_package
 from django.conf import settings
+from .utils_badges import generate_badge
 
 
 User = get_user_model()

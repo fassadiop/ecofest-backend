@@ -39,11 +39,35 @@ class AdminInscriptionListView(ListAPIView):
 @permission_classes([IsAuthenticated, IsAdminUser])
 def validate_inscription(request, pk):
     inscription = get_object_or_404(Inscription, pk=pk)
+
+    # Mise à jour du statut
     inscription.statut = "Validé"
     inscription.save(update_fields=["statut"])
-    badge_path = generate_badge(inscription)
-    send_invitation_package.delay(inscription.id)
-    return Response({"message": "Inscription validée", "id": inscription.id})
+
+    # 👉 Corrections : on passe le PARTICIPANT
+    participant = inscription.participant
+
+    try:
+        badge_path = generate_badge(participant)
+    except Exception as e:
+        return Response(
+            {"error": f"Erreur lors de la génération du badge : {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    try:
+        send_invitation_package.delay(inscription.id)
+    except Exception as e:
+        return Response(
+            {"error": f"Erreur lors de l’envoi de l’email : {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    return Response(
+        {"message": "Inscription validée", "id": inscription.id},
+        status=status.HTTP_200_OK
+    )
+
 
 
 @api_view(["POST"])
@@ -59,10 +83,21 @@ def refuse_inscription(request, pk):
 @permission_classes([IsAuthenticated, IsAdminUser])
 def get_badge_url(request, pk):
     inscription = get_object_or_404(Inscription, pk=pk)
-    badge_path = generate_badge(inscription)
+    participant = inscription.participant  # 🔥 correction
+
+    try:
+        badge_path = generate_badge(participant)
+    except Exception as e:
+        return Response(
+            {"error": f"Erreur badge : {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
     rel_path = os.path.relpath(badge_path, settings.MEDIA_ROOT)
     badge_url = request.build_absolute_uri(settings.MEDIA_URL + rel_path)
+
     return Response({"badge_url": badge_url})
+
 
 
 @api_view(["GET"])

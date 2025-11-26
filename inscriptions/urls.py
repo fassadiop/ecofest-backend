@@ -1,15 +1,20 @@
-from rest_framework.routers import DefaultRouter
 from django.urls import path, include
-from .views import InscriptionViewSet, EvenementViewSet, RegisterView, InscriptionPublicViewSet
+from rest_framework.routers import DefaultRouter
+
 from . import views
 
 router = DefaultRouter()
-router.register(r'inscriptions', InscriptionPublicViewSet, basename='inscription')
-router.register(r'evenements', EvenementViewSet, basename='evenement')
+# Tu n'as plus de ViewSet pour inscriptions ou événements
+# On laisse le router vide mais il peut être utilisé plus tard
 
 urlpatterns = [
-    path('auth/register/', RegisterView.as_view(), name='auth-register'),
+    # --- Endpoints publics ou d’inscription ---
+    # Aucun RegisterView dans ton views.py → on le supprime
+    # path('auth/register/', views.RegisterView.as_view(), name='auth-register'),
+
     path('', include(router.urls)),
+
+    # --- Endpoints Admin ---
     path(
         "admin/inscriptions/<int:pk>/validate/",
         views.validate_inscription,

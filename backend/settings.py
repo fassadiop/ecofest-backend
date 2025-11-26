@@ -113,9 +113,11 @@ DEFAULT_FROM_EMAIL = os.getenv(
     EMAIL_HOST_USER if EMAIL_HOST_USER else "noreply@localhost"
 )
 
+CORS_ALLOW_HEADERS = [
+    "authorization",
+    "content-type",
+]
 
-
-CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
@@ -125,8 +127,8 @@ CORS_ALLOWED_ORIGINS = [
     # "http://127.0.0.1:5174",
     # "http://localhost:8000",
     # "http://127.0.0.1:8000",
-    "http://ecofest.app",
-    "http://www.ecofest.app",
+    "https://ecofest.app",
+    "https://www.ecofest.app",
 ]
 
 # URL du site (utilisée dans les templates)

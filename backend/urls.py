@@ -9,23 +9,27 @@ from inscriptions.views import (
     refuse_inscription,
     get_badge_url,
     get_pieces_urls,
+    AdminInscriptionListView,
 )
 
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    # Auth JWT
+    # JWT Auth
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
-    # Routes du module inscriptions
+    # Module inscriptions
     path('api/', include('inscriptions.urls')),
 
-    # Actions admin (validate / refuse / badge / pièces)
+    # Admin actions (validate/refuse etc)
     path("api/admin/inscriptions/<int:pk>/validate/", validate_inscription),
     path("api/admin/inscriptions/<int:pk>/refuse/", refuse_inscription),
     path("api/admin/inscriptions/<int:pk>/badge/", get_badge_url),
     path("api/admin/inscriptions/<int:pk>/pieces/", get_pieces_urls),
+
+    # Liste admin (tableau back-office)
+    path("api/admin/inscriptions/", AdminInscriptionListView.as_view(), name="admin-inscriptions"),
 ]
 
 if settings.DEBUG:

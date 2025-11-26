@@ -23,7 +23,6 @@ INSTALLED_APPS = [
 
     'rest_framework.authtoken',
     'rest_framework',
-    'inscriptions',
     "inscriptions.apps.InscriptionsConfig",
 ]
 

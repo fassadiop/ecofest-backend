@@ -20,13 +20,16 @@ from .utils_letters import generate_invitation_letter_pdf
 # 1) PACKAGE ACCRÉDITATION (badge + lettre + email)
 # ---------------------------------------------------------
 def send_invitation_package(inscription_id):
-
     inscription = Inscription.objects.select_related("participant").get(id=inscription_id)
     participant = inscription.participant
 
+    # 1) Badge
     badge_path = generate_badge(inscription)
+
+    # 2) Lettre
     letter_path = generate_invitation_letter_pdf(inscription)
 
+    # 3) Email SendGrid
     sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
 
     with open(badge_path, "rb") as f:
@@ -37,9 +40,9 @@ def send_invitation_package(inscription_id):
 
     message = Mail(
         from_email=settings.DEFAULT_FROM_EMAIL,
-        to_emails=participant.email,
+        to_emails=inscription.email,     # <-- IMPORTANT
         subject="ECOFEST 2025 — Votre accréditation est confirmée !",
-        plain_text_content=f"Bonjour {participant.prenom}, veuillez trouver votre badge et votre lettre d'invitation.",
+        plain_text_content=f"Bonjour {participant.prenom}, veuillez trouver votre badge et votre lettre."
     )
 
     # Badge
@@ -63,6 +66,7 @@ def send_invitation_package(inscription_id):
     )
 
     sg.send(message)
+
 
 
 

@@ -20,52 +20,54 @@ from .utils_letters import generate_invitation_letter_pdf
 # 1) PACKAGE ACCRÉDITATION (badge + lettre + email)
 # ---------------------------------------------------------
 def send_invitation_package(inscription_id):
-    inscription = Inscription.objects.select_related("participant").get(id=inscription_id)
+    inscription = Inscription.objects.get(id=inscription_id)
 
-    # Le participant existe mais n'a pas les données personnelles
-    participant = inscription.participant  
-
-    # 1) Générer badge (basé sur inscription)
+    # Génération des fichiers
     badge_path = generate_badge(inscription)
-
-    # 2) Générer lettre PDF
     letter_path = generate_invitation_letter_pdf(inscription)
 
-    # 3) Envoi email
-    sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
-
+    # Lecture en base64
     with open(badge_path, "rb") as f:
         badge_data = base64.b64encode(f.read()).decode()
 
     with open(letter_path, "rb") as f:
         letter_data = base64.b64encode(f.read()).decode()
 
-    message = Mail(
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        to_emails=inscription.email,  # L’email est dans l’inscription
-        subject="ECOFEST 2025 — Votre accréditation est confirmée !",
-        plain_text_content=f"Bonjour {inscription.prenom}, veuillez trouver votre badge et votre lettre."
-    )
+    # IMPORTANT : from_email doit être strictement une adresse valide
+    from_email = settings.DEFAULT_FROM_EMAIL.strip()
 
-    message.add_attachment(
-        Attachment(
-            FileContent(badge_data),
-            FileName(f"badge_{inscription.id}.png"),
-            FileType("image/png"),
-            Disposition("attachment")
-        )
-    )
+    # Construction du JSON SendGrid API v3
+    data = {
+        "personalizations": [{
+            "to": [{"email": inscription.email}],
+            "subject": "ECOFEST 2025 — Votre accréditation"
+        }],
+        "from": {"email": from_email},
+        "content": [{
+            "type": "text/plain",
+            "value": f"Bonjour {inscription.prenom},\n\nVeuillez trouver votre badge et votre lettre d’accréditation."
+        }],
+        "attachments": [
+            {
+                "content": badge_data,
+                "type": "image/png",
+                "filename": f"badge_{inscription.id}.png",
+                "disposition": "attachment"
+            },
+            {
+                "content": letter_data,
+                "type": "application/pdf",
+                "filename": f"inviation_{inscription.id}.pdf",
+                "disposition": "attachment"
+            }
+        ]
+    }
 
-    message.add_attachment(
-        Attachment(
-            FileContent(letter_data),
-            FileName(f"invitation_{inscription.id}.pdf"),
-            FileType("application/pdf"),
-            Disposition("attachment")
-        )
-    )
+    sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
+    response = sg.client.mail.send.post(request_body=data)
 
-    sg.send(message)
+    return response.status_code
+
 
 
 # ---------------------------------------------------------

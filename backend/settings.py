@@ -103,9 +103,9 @@ REST_FRAMEWORK = {
     ),
 }
 
+EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
 SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
 DEFAULT_FROM_EMAIL = "noreply@ecofest.app"
-EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
 
 # Paramètres recommandés
 SENDGRID_SANDBOX_MODE_IN_DEBUG = False

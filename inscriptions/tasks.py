@@ -49,10 +49,10 @@ def send_invitation_package(inscription_id):
     # 4) Préparer email
     message = Mail(
         from_email=settings.DEFAULT_FROM_EMAIL,
-        to_emails=participant.email,
+        to_emails=inscription.email,
         subject="ECOFEST 2025 — Votre accréditation est confirmée !",
         plain_text_content=(
-            f"Bonjour {participant.prenom},\n\n"
+            f"Bonjour {inscription.prenom},\n\n"
             f"Veuillez trouver votre badge et votre lettre d'invitation en pièces jointes.\n\n"
             "Cordialement,\nL'équipe ECOFEST 2025."
         ),

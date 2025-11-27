@@ -23,7 +23,7 @@ def generate_badge(inscription):
     # QR code
     qr_data = f"ECOFEST2025-{inscription.id}-{inscription.email}"
     qr = qrcode.make(qr_data)
-    qr = qr.resize((600, 600))
+    qr = qr.resize((150, 150))
     base.paste(qr, (80, 80))
 
     draw = ImageDraw.Draw(base)

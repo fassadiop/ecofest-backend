@@ -22,38 +22,32 @@ def generate_badge(inscription):
     background_path = os.path.join(settings.BASE_DIR, "static", "badges", filename)
     base = Image.open(background_path).convert("RGBA")
 
-    # ------------ QR CODE (170 px exacts) ------------
+    # ------------ QR CODE 170px ------------
     qr_data = f"ECOFEST2025-{inscription.id}-{inscription.email}"
     qr = qrcode.make(qr_data)
-    qr = qr.resize((170, 170))  # <== EXACT comme ton exemple parfait
-    base.paste(qr, (80, 80))    # position calibrée
+    qr = qr.resize((170, 170))
+    base.paste(qr, (80, 80))
 
-    # ------------ TEXTES ------------
+    # ------------ FONTS ------------
+    font_path_bold = os.path.join(settings.BASE_DIR, "static/fonts/DejaVuSans-Bold.ttf")
+    font_path = os.path.join(settings.BASE_DIR, "static/fonts/DejaVuSans.ttf")
+
+    font_bold = ImageFont.truetype(font_path_bold, 70)
+    font_normal = ImageFont.truetype(font_path, 55)
+
     draw = ImageDraw.Draw(base)
 
-    # Police — Arial remplaçable par ta police custom si besoin
-    font_bold = ImageFont.truetype("arial.ttf", 70)
-    font_normal = ImageFont.truetype("arial.ttf", 55)
-
-    # Nom + Prénom (en gras)
+    # ------------ TEXTES ------------
     name_text = f"{inscription.prenom} {inscription.nom}"
-
-    # Nationalité + provenance (normal)
     nat_text = inscription.nationalite or ""
     prov_text = inscription.provenance or ""
 
-    # Positions calibrées pour éviter les débordements
     NAME_Y = 600
     NAT_Y = 700
     PROV_Y = 780
 
-    # NOM PRÉNOM — GROS, EN GRAS
     draw.text((750, NAME_Y), name_text, fill="black", font=font_bold)
-
-    # NATIONALITÉ — NORMAL
     draw.text((750, NAT_Y), nat_text, fill="black", font=font_normal)
-
-    # PROVENANCE — NORMAL
     draw.text((750, PROV_Y), prov_text, fill="black", font=font_normal)
 
     # ------------ SAVE ------------

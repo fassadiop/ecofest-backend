@@ -20,72 +20,49 @@ from .utils_letters import generate_invitation_letter_pdf
 # 1) PACKAGE ACCRÉDITATION (badge + lettre + email)
 # ---------------------------------------------------------
 def send_invitation_package(inscription_id):
-    """
-    Génère:
-    - badge PNG
-    - lettre d'invitation PDF
-    - envoie un email via SendGrid avec les deux pièces jointes
-    """
-    try:
-        inscription = Inscription.objects.select_related("participant").get(id=inscription_id)
-    except Inscription.DoesNotExist:
-        return {"ok": False, "reason": "inscription_not_found"}
 
+    inscription = Inscription.objects.select_related("participant").get(id=inscription_id)
     participant = inscription.participant
 
-    # 1) Générer badge
     badge_path = generate_badge(inscription)
-
-    # 2) Générer lettre PDF
     letter_path = generate_invitation_letter_pdf(inscription)
 
-    # 3) Charger les fichiers en base64
+    sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
+
     with open(badge_path, "rb") as f:
         badge_data = base64.b64encode(f.read()).decode()
 
     with open(letter_path, "rb") as f:
         letter_data = base64.b64encode(f.read()).decode()
 
-    # 4) Préparer email
     message = Mail(
         from_email=settings.DEFAULT_FROM_EMAIL,
-        to_emails=inscription.email,
+        to_emails=participant.email,
         subject="ECOFEST 2025 — Votre accréditation est confirmée !",
-        plain_text_content=(
-            f"Bonjour {inscription.prenom},\n\n"
-            f"Veuillez trouver votre badge et votre lettre d'invitation en pièces jointes.\n\n"
-            "Cordialement,\nL'équipe ECOFEST 2025."
-        ),
+        plain_text_content=f"Bonjour {participant.prenom}, veuillez trouver votre badge et votre lettre d'invitation.",
     )
 
-    # Ajouter badge
+    # Badge
     message.add_attachment(
         Attachment(
             FileContent(badge_data),
-            FileName(f"badge_{participant.id}.png"),
+            FileName(f"badge_{inscription.id}.png"),
             FileType("image/png"),
             Disposition("attachment"),
         )
     )
 
-    # Ajouter la lettre PDF
+    # Lettre PDF
     message.add_attachment(
         Attachment(
             FileContent(letter_data),
-            FileName(f"invitation_{participant.id}.pdf"),
+            FileName(f"invitation_{inscription.id}.pdf"),
             FileType("application/pdf"),
             Disposition("attachment"),
         )
     )
 
-    # 5) Envoyer via SendGrid
-    try:
-        sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
-        sg.send(message)
-        return {"ok": True}
-    except Exception as e:
-        print("SendGrid error:", e)
-        return {"ok": False, "reason": str(e)}
+    sg.send(message)
 
 
 

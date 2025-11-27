@@ -47,26 +47,51 @@ class AdminInscriptionListView(ListAPIView):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated, IsAdminUser])
 def validate_inscription(request, pk):
-    """
-    Passe une INSCRIPTION en 'Validé',
-    génère badge + lettre + email.
-    """
     inscription = get_object_or_404(Inscription, pk=pk)
 
-    # Récupérer le participant lié
-    participant = inscription.participant
-
-    # Mise à jour du statut de l'inscription
     inscription.statut = "Validé"
     inscription.save(update_fields=["statut"])
 
-    # Générer badge + PDF + envoyer email
-    send_invitation_package(inscription.id)
+    try:
+        send_invitation_package(inscription.id)
+    except Exception as e:
+        import traceback
+        print("🎯 ERREUR validate_inscription :", e)
+        traceback.print_exc()
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
     return Response(
         {"message": "Inscription validée", "id": inscription.id},
         status=status.HTTP_200_OK,
     )
+
+
+# @api_view(["POST"])
+# @permission_classes([IsAuthenticated, IsAdminUser])
+# def validate_inscription(request, pk):
+#     """
+#     Passe une INSCRIPTION en 'Validé',
+#     génère badge + lettre + email.
+#     """
+#     inscription = get_object_or_404(Inscription, pk=pk)
+
+#     # Récupérer le participant lié
+#     participant = inscription.participant
+
+#     # Mise à jour du statut de l'inscription
+#     inscription.statut = "Validé"
+#     inscription.save(update_fields=["statut"])
+
+#     # Générer badge + PDF + envoyer email
+#     send_invitation_package(inscription.id)
+
+#     return Response(
+#         {"message": "Inscription validée", "id": inscription.id},
+#         status=status.HTTP_200_OK,
+#     )
 
 # @api_view(["POST"])
 # @permission_classes([IsAuthenticated, IsAdminUser])

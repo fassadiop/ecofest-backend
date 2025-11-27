@@ -56,17 +56,14 @@ def validate_inscription(request, pk):
         send_invitation_package(inscription.id)
     except Exception as e:
         import traceback
-        print("🎯 ERREUR validate_inscription :", e)
+        print("SENDGRID ERROR:", str(e))
         traceback.print_exc()
         return Response(
             {"error": str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-    return Response(
-        {"message": "Inscription validée", "id": inscription.id},
-        status=status.HTTP_200_OK,
-    )
+    return Response({"message": "OK"}, status=200)
 
 
 # @api_view(["POST"])

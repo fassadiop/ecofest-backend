@@ -52,18 +52,51 @@ def validate_inscription(request, pk):
     inscription.statut = "Validé"
     inscription.save(update_fields=["statut"])
 
+    # LOG 100% FORCE
+    print("---- VALIDATE INSCRIPTION START ----")
+    print("Inscription ID:", inscription.id)
+    print("Email to send:", inscription.email)
+    print("SendGrid Key Loaded:", settings.SENDGRID_API_KEY[:10] + "...")
+    print("------------------------------------")
+
     try:
         send_invitation_package(inscription.id)
+        print("SEND INVITATION PACKAGE: SUCCESS")
     except Exception as e:
         import traceback
-        print("SENDGRID ERROR:", str(e))
+        print("SEND INVITE ERROR:", str(e))
         traceback.print_exc()
+
         return Response(
             {"error": str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
+    print("---- VALIDATE INSCRIPTION END ----")
+
     return Response({"message": "OK"}, status=200)
+
+
+# @api_view(["POST"])
+# @permission_classes([IsAuthenticated, IsAdminUser])
+# def validate_inscription(request, pk):
+#     inscription = get_object_or_404(Inscription, pk=pk)
+
+#     inscription.statut = "Validé"
+#     inscription.save(update_fields=["statut"])
+
+#     try:
+#         send_invitation_package(inscription.id)
+#     except Exception as e:
+#         import traceback
+#         print("SENDGRID ERROR:", str(e))
+#         traceback.print_exc()
+#         return Response(
+#             {"error": str(e)},
+#             status=status.HTTP_500_INTERNAL_SERVER_ERROR
+#         )
+
+#     return Response({"message": "OK"}, status=200)
 
 
 # @api_view(["POST"])

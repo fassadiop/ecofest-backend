@@ -100,18 +100,16 @@ REST_FRAMEWORK = {
     ),
 }
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
 
-EMAIL_HOST = os.getenv("EMAIL_HOST", "ssl0.ovh.net")
-EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
-EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
 
-DEFAULT_FROM_EMAIL = os.getenv(
-    "DEFAULT_FROM_EMAIL",
-    EMAIL_HOST_USER if EMAIL_HOST_USER else "noreply@localhost"
-)
+DEFAULT_FROM_EMAIL = "noreply@ecofest.app"
+
+# Paramètres recommandés
+SENDGRID_SANDBOX_MODE_IN_DEBUG = False
+SENDGRID_ECHO_TO_STDOUT = False
+
 
 CORS_ALLOW_HEADERS = [
     "authorization",

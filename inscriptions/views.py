@@ -61,7 +61,7 @@ def validate_inscription(request, pk):
     inscription.save(update_fields=["statut"])
 
     # Générer badge + PDF + envoyer email
-    send_invitation_package(participant.id)
+    send_invitation_package(inscription.id)
 
     return Response(
         {"message": "Inscription validée", "id": inscription.id},

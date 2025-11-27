@@ -13,19 +13,20 @@ from .utils_letters import generate_invitation_letter_pdf
 # ---------------------------------------------------------
 # 1) PACKAGE ACCRÉDITATION (badge + lettre + email)
 # ---------------------------------------------------------
-def send_invitation_package(participant_id):
-    participant = Participant.objects.get(id=participant_id)
+def send_invitation_package(inscription_id):
+    inscription = Inscription.objects.select_related("participant").get(id=inscription_id)
+    participant = inscription.participant
 
-    # Générer badge PNG
-    badge_path = generate_badge(participant)
+    # 1) Générer badge avec l’inscription
+    badge_path = generate_badge(inscription)
 
-    # Générer lettre PDF
-    letter_path = generate_invitation_letter_pdf(participant)
+    # 2) Générer lettre PDF
+    letter_path = generate_invitation_letter_pdf(inscription)
 
     # Préparer email
     subject = "ECOFEST 2025 — Votre accréditation est confirmée !"
     body = f"""
-Cher/Chère {participant.prenom},
+Cher/Chère {inscription.prenom},
 
 Votre accréditation ECOFEST est validée !
 Veuillez trouver en pièce jointe votre badge et votre lettre d'invitation officielle.
@@ -38,7 +39,7 @@ L'équipe ECOFEST 2025.
         subject,
         body,
         settings.DEFAULT_FROM_EMAIL,
-        [participant.email],
+        [inscription.email],
     )
 
     email.attach_file(badge_path)

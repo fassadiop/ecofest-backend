@@ -47,35 +47,59 @@ class AdminInscriptionListView(ListAPIView):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated, IsAdminUser])
 def validate_inscription(request, pk):
+    """
+    Passe une INSCRIPTION en 'Validé',
+    génère badge + lettre + email.
+    """
     inscription = get_object_or_404(Inscription, pk=pk)
 
-    # Mise à jour du statut
+    # Récupérer le participant lié
+    participant = inscription.participant
+
+    # Mise à jour du statut de l'inscription
     inscription.statut = "Validé"
     inscription.save(update_fields=["statut"])
 
-    # 👉 Corrections : on passe le PARTICIPANT
-    participant = inscription.participant
-
-    try:
-        badge_path = generate_badge(inscription)
-    except Exception as e:
-        return Response(
-            {"error": f"Erreur lors de la génération du badge : {str(e)}"},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
-    try:
-        send_invitation_package(inscription.id)
-    except Exception as e:
-        return Response(
-            {"error": f"Erreur lors de l’envoi de l’email : {str(e)}"},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+    # Générer badge + PDF + envoyer email
+    send_invitation_package(participant.id)
 
     return Response(
         {"message": "Inscription validée", "id": inscription.id},
-        status=status.HTTP_200_OK
+        status=status.HTTP_200_OK,
     )
+
+# @api_view(["POST"])
+# @permission_classes([IsAuthenticated, IsAdminUser])
+# def validate_inscription(request, pk):
+#     inscription = get_object_or_404(Inscription, pk=pk)
+
+#     # Mise à jour du statut
+#     inscription.statut = "Validé"
+#     inscription.save(update_fields=["statut"])
+
+#     # 👉 Corrections : on passe le PARTICIPANT
+#     participant = inscription.participant
+
+#     try:
+#         badge_path = generate_badge(inscription)
+#     except Exception as e:
+#         return Response(
+#             {"error": f"Erreur lors de la génération du badge : {str(e)}"},
+#             status=status.HTTP_500_INTERNAL_SERVER_ERROR
+#         )
+
+#     try:
+#         send_invitation_package(inscription.id)
+#     except Exception as e:
+#         return Response(
+#             {"error": f"Erreur lors de l’envoi de l’email : {str(e)}"},
+#             status=status.HTTP_500_INTERNAL_SERVER_ERROR
+#         )
+
+#     return Response(
+#         {"message": "Inscription validée", "id": inscription.id},
+#         status=status.HTTP_200_OK
+#     )
 
 
 

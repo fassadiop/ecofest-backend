@@ -21,15 +21,17 @@ from .utils_letters import generate_invitation_letter_pdf
 # ---------------------------------------------------------
 def send_invitation_package(inscription_id):
     inscription = Inscription.objects.select_related("participant").get(id=inscription_id)
-    participant = inscription.participant
 
-    # 1) Badge
+    # Le participant existe mais n'a pas les données personnelles
+    participant = inscription.participant  
+
+    # 1) Générer badge (basé sur inscription)
     badge_path = generate_badge(inscription)
 
-    # 2) Lettre
+    # 2) Générer lettre PDF
     letter_path = generate_invitation_letter_pdf(inscription)
 
-    # 3) Email SendGrid
+    # 3) Envoi email
     sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
 
     with open(badge_path, "rb") as f:
@@ -40,34 +42,30 @@ def send_invitation_package(inscription_id):
 
     message = Mail(
         from_email=settings.DEFAULT_FROM_EMAIL,
-        to_emails=inscription.email,     # <-- IMPORTANT
+        to_emails=inscription.email,  # L’email est dans l’inscription
         subject="ECOFEST 2025 — Votre accréditation est confirmée !",
-        plain_text_content=f"Bonjour {participant.prenom}, veuillez trouver votre badge et votre lettre."
+        plain_text_content=f"Bonjour {inscription.prenom}, veuillez trouver votre badge et votre lettre."
     )
 
-    # Badge
     message.add_attachment(
         Attachment(
             FileContent(badge_data),
             FileName(f"badge_{inscription.id}.png"),
             FileType("image/png"),
-            Disposition("attachment"),
+            Disposition("attachment")
         )
     )
 
-    # Lettre PDF
     message.add_attachment(
         Attachment(
             FileContent(letter_data),
             FileName(f"invitation_{inscription.id}.pdf"),
             FileType("application/pdf"),
-            Disposition("attachment"),
+            Disposition("attachment")
         )
     )
 
     sg.send(message)
-
-
 
 
 # ---------------------------------------------------------

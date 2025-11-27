@@ -41,14 +41,14 @@ def generate_badge(inscription):
     name_text = f"{inscription.prenom} {inscription.nom}"
     nat_text = inscription.nationalite or ""
     prov_text = inscription.provenance or ""
-
+    
     NAME_Y = 600
     NAT_Y = 700
     PROV_Y = 780
 
-    draw.text((750, NAME_Y), name_text, fill="black", font=font_bold)
-    draw.text((750, NAT_Y), nat_text, fill="black", font=font_normal)
-    draw.text((750, PROV_Y), prov_text, fill="black", font=font_normal)
+    draw.text((350, NAME_Y), name_text, fill="black", font=font_bold)
+    draw.text((350, NAT_Y), nat_text, fill="black", font=font_normal)
+    draw.text((350, PROV_Y), prov_text, fill="black", font=font_normal)
 
     # ------------ SAVE ------------
     output_dir = os.path.join(settings.MEDIA_ROOT, "badges")

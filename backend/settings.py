@@ -3,6 +3,9 @@ import venv
 import os
 import dj_database_url
 
+print("SENDGRID KEY FROM ENV:", os.getenv("SENDGRID_API_KEY"))
+
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-)50uw+okkfn9g0(76n*o73g0+oyimlo)nx53ft^1+6@$=v+d)k'

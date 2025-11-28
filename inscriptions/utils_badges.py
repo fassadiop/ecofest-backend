@@ -1,64 +1,3 @@
-# import qrcode
-# from PIL import Image, ImageDraw, ImageFont
-# import os
-# from django.conf import settings
-
-# def generate_badge(inscription):
-
-#     # ------------ BACKGROUND ------------
-#     role = (inscription.type_profil or "").strip().upper()
-
-#     backgrounds = {
-#         "PRESSE": "Presse.png",
-#         "PRESS": "Presse.png",
-#         "FESTIVALIERS": "Festivaliers.png",
-#         "FESTIVALIER": "Festivaliers.png",
-#         "ARTISTES PROFESSIONNELS": "Artistes.png",
-#         "ARTISTE PROFESSIONNELS": "Artistes.png",
-#         "ARTISTE PROFESSIONNEL": "Artistes.png",
-#     }
-
-#     filename = backgrounds.get(role, "Festivaliers.png")
-#     background_path = os.path.join(settings.BASE_DIR, "static", "badges", filename)
-#     base = Image.open(background_path).convert("RGBA")
-
-#     # ------------ QR CODE 170px ------------
-#     qr_data = f"ECOFEST2025-{inscription.id}-{inscription.email}"
-#     qr = qrcode.make(qr_data)
-#     qr = qr.resize((170, 170))
-#     base.paste(qr, (80, 80))
-
-#     # ------------ FONTS ------------
-#     font_path_bold = os.path.join(settings.BASE_DIR, "static/fonts/DejaVuSans-Bold.ttf")
-#     font_path = os.path.join(settings.BASE_DIR, "static/fonts/DejaVuSans.ttf")
-
-#     font_bold = ImageFont.truetype(font_path_bold, 55)
-#     font_normal = ImageFont.truetype(font_path, 45)
-
-#     draw = ImageDraw.Draw(base)
-
-#     # ------------ TEXTES ------------
-#     name_text = f"{inscription.prenom} {inscription.nom}"
-#     nat_text = inscription.nationalite or ""
-#     prov_text = inscription.provenance or ""
-    
-#     NAME_Y = 600
-#     NAT_Y = 700
-#     PROV_Y = 780
-
-#     draw.text((400, NAME_Y), name_text, fill="black", font=font_bold)
-#     draw.text((400, NAT_Y), nat_text, fill="black", font=font_normal)
-#     draw.text((400, PROV_Y), prov_text, fill="black", font=font_normal)
-
-#     # ------------ SAVE ------------
-#     output_dir = os.path.join(settings.MEDIA_ROOT, "badges")
-#     os.makedirs(output_dir, exist_ok=True)
-
-#     output_path = os.path.join(output_dir, f"badge_{inscription.id}.png")
-#     base.save(output_path, dpi=(300, 300))
-
-#     return output_path
-
 import qrcode
 from PIL import Image, ImageDraw, ImageFont
 import os
@@ -68,57 +7,36 @@ from django.conf import settings
 # ---------------------------------------------------------
 #  FONCTION DÉCOUPAGE : max 17 caractères, sans couper les mots
 # ---------------------------------------------------------
-def split_name_safely(prenom, nom, max_len=17):
+def split_name_by_width(prenom, nom, font, max_width_px):
     """
-    Découpe (prenom + nom) en 1 ou 2 lignes max, sans couper les mots.
-    - Chaque ligne ≤ max_len caractères
-    - On remplit la ligne 1 autant que possible
-    - Le reste va sur la ligne 2
+    Découpe automatiquement le nom pour ne jamais dépasser max_width_px.
+    Retourne 1 ou 2 lignes max.
     """
 
     full = (prenom or "").strip() + " " + (nom or "").strip()
-    full = full.strip()
-    if not full:
-        return [""]
-
     words = full.split()
-    lines = []
-    current = ""
 
-    for word in words:
-        if not current:
-            # première insertion
-            if len(word) <= max_len:
-                current = word
-            else:
-                # mot seul plus long que max_len => on tronque
-                lines.append(word[:max_len])
-                current = ""
+    line1 = ""
+    line2 = ""
+
+    # Remplir ligne 1
+    for w in words:
+        test = (line1 + " " + w).strip()
+        if font.getlength(test) <= max_width_px:
+            line1 = test
         else:
-            candidate = current + " " + word
-            if len(candidate) <= max_len:
-                current = candidate
+            # Ce mot doit aller sur la ligne 2
+            if not line2:
+                line2 = w
             else:
-                lines.append(current)
-                current = word if len(word) <= max_len else word[:max_len]
+                test2 = (line2 + " " + w).strip()
+                if font.getlength(test2) <= max_width_px:
+                    line2 = test2
+                else:
+                    # Trop long — on tronque
+                    break
 
-        # si on a déjà 2 lignes pleines, on arrête
-        if len(lines) == 2:
-            break
-
-    # ajouter le reste si possible
-    if current and len(lines) < 2:
-        lines.append(current)
-
-    # sécurité : max 2 lignes
-    if len(lines) > 2:
-        lines = lines[:2]
-
-    # re-troncation de sécurité au cas où
-    lines = [l[:max_len] for l in lines]
-
-    return lines
-
+    return [line1, line2] if line2 else [line1]
 
 # ---------------------------------------------------------
 #                  GÉNÉRATION DU BADGE
@@ -161,8 +79,9 @@ def generate_badge(inscription):
     prenom = inscription.prenom or ""
     nom = inscription.nom or ""
 
-    # ⚠️ ICI : on force le passage par la fonction de découpage
-    name_lines = split_name_safely(prenom, nom, max_len=17)
+    # max largeur autorisée = largeur dispo sur ton badge
+    MAX_NAME_WIDTH = 350  # ajuste si nécessaire !
+    name_lines = split_name_by_width(prenom, nom, font_bold, MAX_NAME_WIDTH)
 
     nat_text = inscription.nationalite or ""
     prov_text = inscription.provenance or ""

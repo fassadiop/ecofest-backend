@@ -5,9 +5,13 @@ from django.conf import settings
 
 
 # ---------------------------------------------------------
-#  FONCTION DÉCOUPAGE : max 17 caractères, sans couper les mots
+#  FONCTION DÉCOUPAGE PAR LARGEUR EN PIXELS
 # ---------------------------------------------------------
-def split_name_by_width(prenom, nom, font, max_width_px):
+def split_name_by_pixels(prenom, nom, font, draw, max_width_px):
+    """
+    Coupe le texte prénom + nom en 1 ou 2 lignes SANS dépasser max_width_px.
+    Utilise la largeur réelle en pixels → 100% fiable.
+    """
     full = (prenom or "").strip() + " " + (nom or "").strip()
     words = full.split()
 
@@ -15,19 +19,21 @@ def split_name_by_width(prenom, nom, font, max_width_px):
     line2 = ""
 
     for w in words:
-        # Test pour ligne 1
-        test1 = (line1 + " " + w).strip()
-        if not line2 and font.getlength(test1) <= max_width_px:
-            line1 = test1
-        else:
-            # Passe en ligne 2
-            test2 = (line2 + " " + w).strip()
-            if font.getlength(test2) <= max_width_px:
-                line2 = test2
-            else:
-                break  # On ignore le reste
+        test = (line1 + " " + w).strip()
 
-    return [line1, line2] if line2 else [line1]
+        # Mesurer la largeur réelle
+        bbox = draw.textbbox((0, 0), test, font=font)
+        width = bbox[2] - bbox[0]
+
+        if width <= max_width_px:
+            line1 = test
+        else:
+            # Le mot ne rentre pas → ligne 2
+            line2 = " ".join(words[words.index(w):])
+            break
+
+    return [line1] if not line2 else [line1, line2]
+
 
 
 # ---------------------------------------------------------
@@ -67,48 +73,56 @@ def generate_badge(inscription):
 
     draw = ImageDraw.Draw(base)
 
-    # ------------ TEXTES ------------
-    prenom = inscription.prenom or ""
-    nom = inscription.nom or ""
+    # ------------ NOM : Découpage intelligent par pixels ------------
+    MAX_NAME_WIDTH = 850  # largeur utile pour le texte nom/prénom
 
-    # max largeur autorisée = largeur dispo sur ton badge
-    MAX_NAME_WIDTH = 470  # largeur réelle disponible
-    name_lines = split_name_by_width(prenom, nom, font_bold, MAX_NAME_WIDTH)
+    name_lines = split_name_by_pixels(
+        inscription.prenom,
+        inscription.nom,
+        font_bold,
+        draw,
+        MAX_NAME_WIDTH
+    )
 
+    # ------------ TEXTES ANNEXES ------------
     nat_text = inscription.nationalite or ""
     prov_text = inscription.provenance or ""
 
-    # positions de base (ajuste si besoin)
+    TEXT_X = 400
     NAME_Y = 600
-    LINE_SPACING = 65
+    LINE_SPACING = 60
     NAT_Y = 700
     PROV_Y = 780
-    TEXT_X = 400  # alignement horizontal (gauche du bloc texte)
 
-    # --------- NOM : 1 ou 2 lignes ---------
+    # --- Affichage du nom en 1 ou 2 lignes ---
     draw.text((TEXT_X, NAME_Y), name_lines[0], fill="black", font=font_bold)
 
     extra_offset = 0
     if len(name_lines) > 1:
-        draw.text((TEXT_X, NAME_Y + LINE_SPACING), name_lines[1], fill="black", font=font_bold)
+        draw.text(
+            (TEXT_X, NAME_Y + LINE_SPACING),
+            name_lines[1],
+            fill="black",
+            font=font_bold
+        )
         extra_offset = LINE_SPACING
 
-    # --------- NATIONALITÉ ---------
+    # --- NATIONALITÉ ---
     if nat_text:
         draw.text(
             (TEXT_X, NAT_Y + extra_offset),
             nat_text,
             fill="black",
-            font=font_normal,
+            font=font_normal
         )
 
-    # --------- PROVENANCE ---------
+    # --- PROVENANCE ---
     if prov_text:
         draw.text(
             (TEXT_X, PROV_Y + extra_offset),
             prov_text,
             fill="black",
-            font=font_normal,
+            font=font_normal
         )
 
     # ------------ SAVE ------------

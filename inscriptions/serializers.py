@@ -162,10 +162,4 @@ class PublicInscriptionSerializer(serializers.ModelSerializer):
         except:
             pass
 
-        # 6) Tâche Celery
-        try:
-            send_confirmation_email(inscription.id)
-        except Exception as e:
-            print("Celery error:", e)
 
-        return inscription

@@ -96,7 +96,7 @@ class Inscription(models.Model):
         if remarque:
             self.admin_remarque = remarque
         self.save()
-        # generate badge & invitation synchronously (or schedule Celery task in prod)
+        
         from .utils import generate_badge_png_for_inscription, generate_invitation_pdf_for_inscription
         badge_path = generate_badge_png_for_inscription(self)
         invitation_path = generate_invitation_pdf_for_inscription(self)

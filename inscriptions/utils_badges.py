@@ -80,7 +80,7 @@ def generate_badge(inscription):
     nom = inscription.nom or ""
 
     # max largeur autorisée = largeur dispo sur ton badge
-    MAX_NAME_WIDTH = 350  # ajuste si nécessaire !
+    MAX_NAME_WIDTH = 300  # ajuste si nécessaire !
     name_lines = split_name_by_width(prenom, nom, font_bold, MAX_NAME_WIDTH)
 
     nat_text = inscription.nationalite or ""

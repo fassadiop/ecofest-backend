@@ -59,50 +59,63 @@
 
 #     return output_path
 
-import qrcode 
+import qrcode
 from PIL import Image, ImageDraw, ImageFont
 import os
 from django.conf import settings
 
 
 # ---------------------------------------------------------
-#  FONCTION DÉCOUPAGE : jamais > 17 chars, pas de mot coupé
+#  FONCTION DÉCOUPAGE : max 17 caractères, sans couper les mots
 # ---------------------------------------------------------
 def split_name_safely(prenom, nom, max_len=17):
     """
-    Découpe prenom + nom en max 2 lignes.
-    
-    - Aucun mot dépassé
-    - On remplit la LINE 1 avec le plus de mots possible (≤ 17 chars)
-    - Le reste va en LINE 2 (≤ 17 chars)
-    - Si le nom peut entrer dans la 2e ligne, il est groupé proprement
+    Découpe (prenom + nom) en 1 ou 2 lignes max, sans couper les mots.
+    - Chaque ligne ≤ max_len caractères
+    - On remplit la ligne 1 autant que possible
+    - Le reste va sur la ligne 2
     """
 
-    words = (prenom.strip() + " " + nom.strip()).split()
+    full = (prenom or "").strip() + " " + (nom or "").strip()
+    full = full.strip()
+    if not full:
+        return [""]
+
+    words = full.split()
     lines = []
     current = ""
 
     for word in words:
         if not current:
-            current = word
+            # première insertion
+            if len(word) <= max_len:
+                current = word
+            else:
+                # mot seul plus long que max_len => on tronque
+                lines.append(word[:max_len])
+                current = ""
         else:
-            if len(current) + 1 + len(word) <= max_len:
-                current += " " + word
+            candidate = current + " " + word
+            if len(candidate) <= max_len:
+                current = candidate
             else:
                 lines.append(current)
-                current = word
+                current = word if len(word) <= max_len else word[:max_len]
 
-    if current:
+        # si on a déjà 2 lignes pleines, on arrête
+        if len(lines) == 2:
+            break
+
+    # ajouter le reste si possible
+    if current and len(lines) < 2:
         lines.append(current)
 
-    # Garantir maximum 2 lignes (sécurité pour badge)
+    # sécurité : max 2 lignes
     if len(lines) > 2:
-        # Ligne 1 = premier bloc
-        line1 = lines[0]
-        # Ligne 2 = tout le reste concaténé
-        line2 = " ".join(lines[1:])
-        # Si ligne 2 dépasse 17 chars, on laisse quand même (cas ultra rare)
-        return [line1[:max_len], line2[:max_len]]
+        lines = lines[:2]
+
+    # re-troncation de sécurité au cas où
+    lines = [l[:max_len] for l in lines]
 
     return lines
 
@@ -148,33 +161,51 @@ def generate_badge(inscription):
     prenom = inscription.prenom or ""
     nom = inscription.nom or ""
 
+    # ⚠️ ICI : on force le passage par la fonction de découpage
     name_lines = split_name_safely(prenom, nom, max_len=17)
 
     nat_text = inscription.nationalite or ""
     prov_text = inscription.provenance or ""
-    
+
+    # positions de base (ajuste si besoin)
     NAME_Y = 600
+    LINE_SPACING = 60
     NAT_Y = 700
     PROV_Y = 780
+    TEXT_X = 400  # alignement horizontal (gauche du bloc texte)
 
-    # -- NOM sur 1 ou 2 lignes
-    draw.text((400, NAME_Y), name_lines[0], fill="black", font=font_bold)
+    # --------- NOM : 1 ou 2 lignes ---------
+    # Ligne 1 (toujours présente)
+    draw.text((TEXT_X, NAME_Y), name_lines[0], fill="black", font=font_bold)
 
+    # Ligne 2 pour le nom si besoin
+    extra_offset = 0
     if len(name_lines) > 1:
-        draw.text((400, NAME_Y + 60), name_lines[1], fill="black", font=font_bold)
-        nat_y = NAT_Y + 60
-        prov_y = PROV_Y + 60
-    else:
-        nat_y = NAT_Y
-        prov_y = PROV_Y
+        draw.text(
+            (TEXT_X, NAME_Y + LINE_SPACING),
+            name_lines[1],
+            fill="black",
+            font=font_bold,
+        )
+        extra_offset = LINE_SPACING  # on décale les autres infos vers le bas
 
-    # -- NATIONALITE
+    # --------- NATIONALITÉ ---------
     if nat_text:
-        draw.text((400, nat_y), nat_text, fill="black", font=font_normal)
+        draw.text(
+            (TEXT_X, NAT_Y + extra_offset),
+            nat_text,
+            fill="black",
+            font=font_normal,
+        )
 
-    # -- PROVENANCE
+    # --------- PROVENANCE ---------
     if prov_text:
-        draw.text((400, prov_y), prov_text, fill="black", font=font_normal)
+        draw.text(
+            (TEXT_X, PROV_Y + extra_offset),
+            prov_text,
+            fill="black",
+            font=font_normal,
+        )
 
     # ------------ SAVE ------------
     output_dir = os.path.join(settings.MEDIA_ROOT, "badges")

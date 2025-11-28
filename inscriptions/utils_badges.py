@@ -68,8 +68,8 @@ def generate_badge(inscription):
     font_path_bold = os.path.join(settings.BASE_DIR, "static/fonts/DejaVuSans-Bold.ttf")
     font_path = os.path.join(settings.BASE_DIR, "static/fonts/DejaVuSans.ttf")
 
-    font_bold = ImageFont.truetype(font_path_bold, 55)
-    font_normal = ImageFont.truetype(font_path, 45)
+    font_bold = ImageFont.truetype(font_path_bold, 50)
+    font_normal = ImageFont.truetype(font_path, 40)
 
     draw = ImageDraw.Draw(base)
 

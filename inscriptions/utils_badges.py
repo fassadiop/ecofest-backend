@@ -15,19 +15,17 @@ def split_name_by_width(prenom, nom, font, max_width_px):
     line2 = ""
 
     for w in words:
-        test = (line1 + " " + w).strip()
-        if font.getlength(test) <= max_width_px:
-            line1 = test
+        # Test pour ligne 1
+        test1 = (line1 + " " + w).strip()
+        if not line2 and font.getlength(test1) <= max_width_px:
+            line1 = test1
         else:
-            # mot passe en ligne 2
-            if not line2:
-                line2 = w
+            # Passe en ligne 2
+            test2 = (line2 + " " + w).strip()
+            if font.getlength(test2) <= max_width_px:
+                line2 = test2
             else:
-                test2 = (line2 + " " + w).strip()
-                if font.getlength(test2) <= max_width_px:
-                    line2 = test2
-                else:
-                    break
+                break  # On ignore le reste
 
     return [line1, line2] if line2 else [line1]
 
@@ -74,7 +72,7 @@ def generate_badge(inscription):
     nom = inscription.nom or ""
 
     # max largeur autorisée = largeur dispo sur ton badge
-    MAX_NAME_WIDTH = 450   # AJUSTÉ pour ton badge
+    MAX_NAME_WIDTH = 470  # largeur réelle disponible
     name_lines = split_name_by_width(prenom, nom, font_bold, MAX_NAME_WIDTH)
 
     nat_text = inscription.nationalite or ""
@@ -82,25 +80,18 @@ def generate_badge(inscription):
 
     # positions de base (ajuste si besoin)
     NAME_Y = 600
-    LINE_SPACING = 60
+    LINE_SPACING = 65
     NAT_Y = 700
     PROV_Y = 780
     TEXT_X = 400  # alignement horizontal (gauche du bloc texte)
 
     # --------- NOM : 1 ou 2 lignes ---------
-    # Ligne 1 (toujours présente)
     draw.text((TEXT_X, NAME_Y), name_lines[0], fill="black", font=font_bold)
 
-    # Ligne 2 pour le nom si besoin
     extra_offset = 0
     if len(name_lines) > 1:
-        draw.text(
-            (TEXT_X, NAME_Y + LINE_SPACING),
-            name_lines[1],
-            fill="black",
-            font=font_bold,
-        )
-        extra_offset = LINE_SPACING  # on décale les autres infos vers le bas
+        draw.text((TEXT_X, NAME_Y + LINE_SPACING), name_lines[1], fill="black", font=font_bold)
+        extra_offset = LINE_SPACING
 
     # --------- NATIONALITÉ ---------
     if nat_text:

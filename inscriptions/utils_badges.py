@@ -8,24 +8,18 @@ from django.conf import settings
 #  FONCTION DÉCOUPAGE : max 17 caractères, sans couper les mots
 # ---------------------------------------------------------
 def split_name_by_width(prenom, nom, font, max_width_px):
-    """
-    Découpe automatiquement le nom pour ne jamais dépasser max_width_px.
-    Retourne 1 ou 2 lignes max.
-    """
-
     full = (prenom or "").strip() + " " + (nom or "").strip()
     words = full.split()
 
     line1 = ""
     line2 = ""
 
-    # Remplir ligne 1
     for w in words:
         test = (line1 + " " + w).strip()
         if font.getlength(test) <= max_width_px:
             line1 = test
         else:
-            # Ce mot doit aller sur la ligne 2
+            # mot passe en ligne 2
             if not line2:
                 line2 = w
             else:
@@ -33,10 +27,10 @@ def split_name_by_width(prenom, nom, font, max_width_px):
                 if font.getlength(test2) <= max_width_px:
                     line2 = test2
                 else:
-                    # Trop long — on tronque
                     break
 
     return [line1, line2] if line2 else [line1]
+
 
 # ---------------------------------------------------------
 #                  GÉNÉRATION DU BADGE
@@ -80,7 +74,7 @@ def generate_badge(inscription):
     nom = inscription.nom or ""
 
     # max largeur autorisée = largeur dispo sur ton badge
-    MAX_NAME_WIDTH = 600  # ajuste si nécessaire !
+    MAX_NAME_WIDTH = 450   # AJUSTÉ pour ton badge
     name_lines = split_name_by_width(prenom, nom, font_bold, MAX_NAME_WIDTH)
 
     nat_text = inscription.nationalite or ""

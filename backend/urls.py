@@ -9,6 +9,7 @@ from inscriptions.views import (
     refuse_inscription,
     get_badge_url,
     get_pieces_urls,
+    download_badges_zip,
     AdminInscriptionListView,
 )
 
@@ -35,6 +36,7 @@ urlpatterns = [
 
     # Liste admin (tableau back-office)
     path("api/admin/inscriptions/", AdminInscriptionListView.as_view(), name="admin-inscriptions"),
+    path("api/admin/badges/download/", download_badges_zip, name="download-badges"),
 ]
 
 if settings.DEBUG:

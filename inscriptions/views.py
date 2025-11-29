@@ -1,4 +1,5 @@
 import os
+import zipfile
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -6,7 +7,9 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from rest_framework.permissions import IsAdminUser, AllowAny, IsAuthenticated
 from rest_framework.generics import ListAPIView
+from django.http import Http404, HttpResponse
 from django.conf import settings
+from django.contrib.admin.views.decorators import staff_member_required
 
 from .models import Inscription, Participant, Badge, Evenement
 from .serializers import (
@@ -201,3 +204,42 @@ def get_pieces_urls(request, pk):
         data["carte_presse_url"] = request.build_absolute_uri(inscription.carte_presse_file.url)
 
     return Response(data)
+
+# @staff_member_required
+# def download_badges_zip(request):
+#     badges_dir = os.path.join(settings.MEDIA_ROOT, "badges")
+#     zip_path = os.path.join(settings.MEDIA_ROOT, "badges.zip")
+
+#     # Créer le ZIP
+#     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+#         for root, dirs, files in os.walk(badges_dir):
+#             for file in files:
+#                 file_path = os.path.join(root, file)
+#                 arcname = os.path.relpath(file_path, badges_dir)
+#                 zipf.write(file_path, arcname)
+
+#     # Lire le ZIP et l'envoyer
+#     with open(zip_path, 'rb') as f:
+#         response = HttpResponse(f.read(), content_type='application/zip')
+#         response['Content-Disposition'] = 'attachment; filename="badges.zip"'
+#         return response
+
+@staff_member_required
+def download_badges_zip(request):
+    badges_dir = os.path.join(settings.MEDIA_ROOT, "badges")
+    if not os.path.isdir(badges_dir):
+        raise Http404("Badges directory not found.")
+
+    # create an in-memory zip? For simplicity we write a temp file in MEDIA_ROOT
+    zip_path = os.path.join(settings.MEDIA_ROOT, "badges_export.zip")
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        for root, dirs, files in os.walk(badges_dir):
+            for file in files:
+                file_path = os.path.join(root, file)
+                arcname = os.path.relpath(file_path, badges_dir)
+                zf.write(file_path, arcname)
+
+    with open(zip_path, "rb") as f:
+        resp = HttpResponse(f.read(), content_type="application/zip")
+        resp["Content-Disposition"] = 'attachment; filename="badges_ecofest.zip"'
+        return resp

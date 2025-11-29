@@ -12,11 +12,12 @@ from inscriptions.views import (
     AdminInscriptionListView,
 )
 
-from .api_views import me, admin_users
+from backend.api_views import me, admin_users
+
 
 urlpatterns = [
-    path("api/auth/me/", me),
-    path("api/admin/users/", admin_users),
+    path("api/auth/me/", me, name="api-auth-me"),
+    path("api/admin/users/", admin_users, name="api-admin-users"),
     path('admin/', admin.site.urls),
     path('api/admin/', include('users.urls')),
     # JWT Auth

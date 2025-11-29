@@ -11,8 +11,10 @@ from inscriptions.views import (
     get_pieces_urls,
     AdminInscriptionListView,
 )
+from auth_views import me
 
 urlpatterns = [
+    path("api/auth/me/", me),
     path('admin/', admin.site.urls),
     path('api/admin/', include('users.urls')),
     # JWT Auth

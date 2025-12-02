@@ -70,7 +70,7 @@ class Inscription(models.Model):
     evenement = models.ForeignKey(Evenement, on_delete=models.SET_NULL, null=True, blank=True)
     nom = models.CharField(max_length=150)
     prenom = models.CharField(max_length=150)
-    email = models.EmailField()
+    email = models.EmailField(unique=True)
     telephone = models.CharField(max_length=30, blank=True, null=True)
     nationalite = models.CharField(max_length=100, blank=True, null=True)
     provenance = models.CharField(max_length=255, blank=True, null=True)

@@ -26,19 +26,48 @@ from .utils_badges import generate_badge
 
 User = get_user_model()
 
+from rest_framework.exceptions import ValidationError
+
 class InscriptionPublicViewSet(viewsets.ModelViewSet):
     queryset = Inscription.objects.all().order_by('-created_at')
     serializer_class = PublicInscriptionSerializer
 
     def get_permissions(self):
-        if self.action in ['create']:
+        # Public: seulement l'inscription (POST)
+        if self.action == 'create':
             return [AllowAny()]
+        # Les autres actions ne doivent PAS être accessibles publiquement
+        return [IsAuthenticated(), IsAdminUser()]
+
+    def create(self, request, *args, **kwargs):
+        # Vérification email unique AVANT sérialisation
+        email = request.data.get("email")
+        if email and Inscription.objects.filter(email=email).exists():
+            raise ValidationError({"email": "Cet email est déjà utilisé par une autre participant."})
+
+        return super().create(request, *args, **kwargs)     
 
 
 class InscriptionViewSet(viewsets.ModelViewSet):
     queryset = Inscription.objects.all().order_by('-created_at')
     serializer_class = InscriptionSerializer
     permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def create(self, request, *args, **kwargs):
+        email = request.data.get("email")
+        if email and Inscription.objects.filter(email=email).exists():
+            raise ValidationError({"email": "Cet email est déjà utilisé par une autre participant."})
+        
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        email = request.data.get("email")
+        instance = self.get_object()
+
+        if email and email != instance.email and Inscription.objects.filter(email=email).exists():
+            raise ValidationError({"email": "Cet email est déjà utilisé par une autre participant."})
+        
+        return super().update(request, *args, **kwargs)
 
 
 class AdminInscriptionListView(ListAPIView):
